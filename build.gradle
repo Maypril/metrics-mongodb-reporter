@@ -1,0 +1,43 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'findbugs'
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+	codahaleMetricsVersion = "3.0.+"
+	mongodbDriverVersion = "2.+"
+    embedMongoVersion = "1.42"
+}
+
+jar {
+    baseName = 'metrics-mongodb-reporter'
+    version =  '0.1.0'
+}
+
+findbugs {
+    effort = 'max'
+    reportLevel = "medium" 
+}
+
+tasks.withType(FindBugs) {
+    reports {
+        xml.enabled = false
+        html.enabled = true
+    }
+ }
+
+dependencies {
+	compile group: "com.codahale.metrics", name: "metrics-core", version: "${codahaleMetricsVersion}"
+	compile group: "org.mongodb", name: "mongo-java-driver", version: "${mongodbDriverVersion}"
+    
+    testCompile group: 'junit', name: 'junit', version:'4.+'
+    testCompile group: 'org.mockito', name: 'mockito-all', version:'1.9.+'
+    
+}
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '1.11'
+}
