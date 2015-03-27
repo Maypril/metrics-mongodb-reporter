@@ -28,6 +28,7 @@ import com.codahale.metrics.Snapshot;
 import com.codahale.metrics.Timer;
 import com.mongodb.DB;
 import com.mongodb.DBCollection;
+import com.mongodb.MongoException;
 
 /**
  * A reporter which stores metrics to an mongodb server.
@@ -137,7 +138,7 @@ public class MongoDBReporter extends ScheduledReporter {
     private MongoDBReporter(final MetricRegistry registry, final DB db, final Clock clock, final String prefix, final TimeUnit rateUnit, final TimeUnit durationUnit,
             final MetricFilter filter) {
         super(registry, "mongodb-reporter", filter, rateUnit, durationUnit);
-        LOGGER.trace("Creaging MongoDBReporter: {} {} {} {} {} {}", registry, db, clock, prefix, rateUnit, durationUnit, filter);
+        LOGGER.trace("Creating MongoDBReporter: {} {} {} {} {} {}", registry, db, clock, prefix, rateUnit, durationUnit, filter);
         this.db = db;
         this.clock = clock;
         this.prefix = prefix;
@@ -177,8 +178,11 @@ public class MongoDBReporter extends ScheduledReporter {
         entity.setName(prefix(name));
         entity.setTimestamp(timestamp);
 
-
-        coll.save(entity.toDBObject());
+        try {
+            coll.save(entity.toDBObject());
+        } catch(MongoException e){
+            LOGGER.warn("Unable to report timer {}", name, e);
+        }
     }
 
     private void reportMetered(final String name, final Metered meter, final Date timestamp) {
@@ -186,7 +190,12 @@ public class MongoDBReporter extends ScheduledReporter {
         final MeteredEntity entity = new MeteredEntity(meter);
         entity.setName(prefix(name));
         entity.setTimestamp(timestamp);
-        coll.save(entity.toDBObject());
+
+        try {
+            coll.save(entity.toDBObject());
+        } catch(MongoException e){
+            LOGGER.warn("Unable to report meter {}",name, e);
+        }
     }
 
     private void reportHistogram(final String name, final Histogram histogram, final Date timestamp) {
@@ -197,7 +206,12 @@ public class MongoDBReporter extends ScheduledReporter {
         entity.setName(prefix(name));
         entity.setCount(histogram.getCount());
         entity.setTimestamp(timestamp);
-        coll.save(entity.toDBObject());
+
+        try {
+            coll.save(entity.toDBObject());
+        } catch(MongoException e) {
+            LOGGER.warn("Unable to report histogram {}", name, e);
+        }
     }
 
     private void reportCounter(final String name, final Counter counter, final Date timestamp) {
@@ -207,7 +221,12 @@ public class MongoDBReporter extends ScheduledReporter {
         entity.setName(prefix(name, "count"));
         entity.setCount(counter.getCount());
         entity.setTimestamp(timestamp);
-        coll.save(entity.toDBObject());
+
+        try {
+            coll.save(entity.toDBObject());
+        } catch(MongoException e) {
+            LOGGER.warn("Unable to report counter {}", name, e);
+        }
     }
 
     private void reportGauge(final String name, final Gauge gauge, final Date timestamp) {
@@ -220,7 +239,11 @@ public class MongoDBReporter extends ScheduledReporter {
             entity.setTimestamp(timestamp);
             entity.setValue(value);
 
-            coll.save(entity.toDBObject());
+            try {
+                coll.save(entity.toDBObject());
+            } catch(MongoException e) {
+                LOGGER.warn("Unable to report gauge {}", name, e);
+            }
         }
     }
 
